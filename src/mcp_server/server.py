@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize MCP server
-server = Server("semantic-search")
+server = Server("local-docs-mcp")
 
 # Initialize semantic search service
 search_config = SearchConfig()
@@ -53,7 +53,7 @@ async def handle_list_resources() -> ListResourcesResult:
     """List available resources"""
     resources = [
         Resource(
-            uri="semantic-search://collection-info",
+            uri="local-docs-mcp://collection-info",
             name="Collection Information",
             description="Information about the indexed document collection",
             mimeType="application/json"
@@ -65,7 +65,7 @@ async def handle_list_resources() -> ListResourcesResult:
 @server.read_resource()
 async def handle_read_resource(uri: str) -> ReadResourceResult:
     """Handle resource requests"""
-    if uri == "semantic-search://collection-info":
+    if uri == "local-docs-mcp://collection-info":
         info = search_service.get_collection_info()
         return ReadResourceResult(
             contents=[
@@ -87,7 +87,7 @@ async def main():
             read_stream,
             write_stream,
             InitializationOptions(
-                server_name="semantic-search",
+                server_name="local-docs-mcp",
                 server_version="1.0.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),

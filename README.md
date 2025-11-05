@@ -26,7 +26,7 @@ docker compose -f <(curl -L https://raw.githubusercontent.com/cocoindex-io/cocoi
 
 3. **Configure environment:**
 ```bash
-cp config/default.env.example .env
+cp .env.example .env
 # Edit .env with your specific configuration
 ```
 
@@ -49,9 +49,9 @@ Add this to your MCP client configuration (e.g., Claude Code):
 ```json
 {
   "mcpServers": {
-    "semantic-search": {
+    "local-docs-mcp": {
       "command": "uv",
-      "args": ["run", "python", "-m", "/path/to/src.mcp.server"]
+      "args": ["run", "--project", "/path/to/local-docs-mcp", "-m", "src.mcp_server.server"]
     }
   }
 }
