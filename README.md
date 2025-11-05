@@ -1,114 +1,81 @@
 # Local Docs MCP - Semantic Search System
 
-A modular semantic search system with MCP (Model Context Protocol) integration for indexing and searching local documentation using Qdrant and Ollama embeddings.
+A modular semantic search system with MCP (Model Context Protocol) integration for indexing and searching local documentation.
 
 ## Quick Start
-
-### Prerequisites
-
-- [Python 3.11+](https://www.python.org/downloads/)
-- [Qdrant](https://qdrant.tech/) vector database
-- [Ollama](https://ollama.ai/) with embedding model
 
 ### Installation
 
 1. **Clone and setup the project:**
-   ```bash
-   git clone <repository-url>
-   cd local-docs-mcp
-   python scripts/setup.py
-   ```
+```bash
+git clone <repository-url>
+cd local-docs-mcp
+```
 
 2. **Start required services:**
-   ```bash
-   # Start Qdrant
-   docker run -d -p 6334:6334 -p 6333:6333 qdrant/qdrant
-   
-   # Make sure Ollama is running with the embedding model
-   ollama pull hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16
-   ```
+```bash
+# Start Qdrant
+docker run -d -p 6334:6334 -p 6333:6333 qdrant/qdrant
+
+# Make sure Ollama is running with the embedding model
+ollama pull hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16
+
+# Setup postgres for cocoindex
+docker compose -f <(curl -L https://raw.githubusercontent.com/cocoindex-io/cocoindex/refs/heads/main/dev/postgres.yaml) up -d
+```
 
 3. **Configure environment:**
-   ```bash
-   cp config/default.env.example .env
-   # Edit .env with your specific configuration
-   ```
+```bash
+cp config/default.env.example .env
+# Edit .env with your specific configuration
+```
 
 4. **Index your documents:**
-   ```bash
-   python -m src.indexing.main_flow
-   ```
+```bash
+uv run python -m src.indexing.main_flow
+```
 
 5. **Start the MCP server:**
-   ```bash
-   python -m src.mcp.server
-   ```
+```bash
+uv run python -m src.mcp.server
+```
 
 ## Configuration
 
-### Environment Variables
-
-Key configuration options in `.env`:
-
-```bash
-# Qdrant Configuration
-QDRANT_URL=http://localhost:6334
-QDRANT_COLLECTION=TextEmbedding
-
-# Ollama Configuration
-OLLAMA_MODEL=hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16
-```
-
 ### MCP Client Setup
 
-Add this to your MCP client configuration (e.g., Claude Desktop):
+Add this to your MCP client configuration (e.g., Claude Code):
 
 ```json
 {
   "mcpServers": {
     "semantic-search": {
-      "command": "python",
-      "args": ["-m", "src.mcp.server"],
-      "env": {
-        "QDRANT_URL": "http://localhost:6334",
-        "QDRANT_COLLECTION": "local-docs-collection",
-        "OLLAMA_MODEL": "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
-      }
+      "command": "uv",
+      "args": ["run", "python", "-m", "/path/to/src.mcp.server"]
     }
   }
 }
 ```
+
+## MCP Tools
+
+The MCP server exposes the following semantic search tools to AI assistants:
+
+| Tool | Purpose | Parameters | Example Prompt |
+|------|---------|------------|----------------|
+| `semantic_search` | Perform semantic search on indexed documents. Finds content based on meaning and context rather than exact keywords. | `query` (required string), `limit` (optional number, default: 10), `min_similarity_score` (optional number, default: 0.0) | "Find information about error handling patterns in the codebase" |
+| `hybrid_search` | Combine semantic search with keyword matching. Useful when exact terminology matters alongside conceptual meaning. | `query` (required string), `semantic_weight` (optional number, default: 0.7), `limit` (optional number, default: 10), `min_similarity_score` (optional number, default: 0.0) | "Search for 'async await' patterns and asynchronous programming concepts" |
+| `document_retrieval` | Retrieve complete document by ID. Use this when you need the full context of a specific document found in search results. | `document_id` (required string) | "Get the full document for ID 'doc_12345'" |
+| `search_with_metadata_filter` | Search with metadata constraints. Use this to narrow down search results by specific document properties. | `query` (required string), `metadata_filter` (optional object), `limit` (optional number, default: 10), `min_similarity_score` (optional number, default: 0.0) | "Search for API documentation in files with filename containing 'api'" |
+| `get_collection_info` | Get information about the indexed document collection, including statistics and status. | _none_ | "Show me collection statistics and indexing status" |
 
 ## Development
 
 ### Running Tests
 
 ```bash
-python scripts/run_tests.py
+uv run pytest tests/
 ```
-
-### Project Structure Benefits
-
-- **Modular Design**: Clear separation of concerns between indexing, search, and MCP functionality
-- **Scalable Architecture**: Easy to add new search strategies or MCP tools
-- **Testable**: Each module can be tested independently
-- **Maintainable**: Organized structure makes code easier to understand and modify
-
-### Adding New Features
-
-1. **New Search Strategies**: Add methods to `src/search/service.py`
-2. **New MCP Tools**: Define in `src/mcp/tools.py`
-3. **New Indexing Features**: Extend `src/indexing/main_flow.py`
-
-## Available Tools
-
-The MCP server provides these tools:
-
-- **`semantic_search`** - Pure semantic search based on meaning and context
-- **`hybrid_search`** - Combines semantic search with keyword matching
-- **`document_retrieval`** - Retrieve complete documents by ID
-- **`search_with_metadata_filter`** - Search with metadata constraints
-- **`get_collection_info`** - Get collection statistics and status
 
 ## Contributing
 
@@ -119,7 +86,7 @@ The MCP server provides these tools:
 
 ## License
 
-This project is part of the local-docs-mcp system and follows the same license terms.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Related Projects
 
