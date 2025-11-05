@@ -1,0 +1,13 @@
+# CocoIndex Ignore File
+docs/godot-docs/*           # ignore everything in root
+!docs/godot-docs/*/         # but keep all directories (and their contents)
+
+# Directories in godot-docs root
+docs/godot-docs/.git/
+docs/godot-docs/_extensions/
+docs/godot-docs/_static/
+docs/godot-docs/_styleguides/
+docs/godot-docs/_templates/
+docs/godot-docs/_tools/
+docs/godot-docs/.github/
+docs/godot-docs/img/

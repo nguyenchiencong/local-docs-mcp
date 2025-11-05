@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "semantic-search": {
+      "command": "python",
+      "args": ["semantic_search_mcp.py"],
+      "env": {
+        "QDRANT_URL": "http://localhost:6334",
+        "QDRANT_COLLECTION": "local-docs-collection",
+        "OLLAMA_MODEL": "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
+      }
+    }
+  }
+}

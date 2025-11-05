@@ -1,0 +1,64 @@
+[project]
+name = "local-docs-mcp"
+version = "0.1.0"
+description = "Modular semantic search system with MCP integration for indexing and searching local documentation using Qdrant and Ollama embeddings."
+requires-python = ">=3.11"
+dependencies = [
+    "chonkie>=1.4.1",
+    "cocoindex[embeddings]>=0.3.2",
+    "python-dotenv>=1.0.1",
+    "qdrant-client>=1.6.0",
+    "ollama>=0.1.0",
+    "tiktoken>=0.5.0",
+    "mcp>=1.0.0",
+    "pytest>=8.4.2",
+]
+
+[project.scripts]
+local-docs-index = "src.indexing.main_flow:_main"
+local-docs-mcp = "src.mcp_server.server:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.yaml", "*.yml", "*.env.example"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::pytest.PytestAssertRewriteWarning:anyio"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src"]
