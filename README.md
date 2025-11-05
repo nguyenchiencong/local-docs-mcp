@@ -37,7 +37,7 @@ uv run python -m src.indexing.main_flow
 
 5. **Start the MCP server:**
 ```bash
-uv run python -m src.mcp.server
+uv run python -m src.mcp_server.server
 ```
 
 ## Configuration
