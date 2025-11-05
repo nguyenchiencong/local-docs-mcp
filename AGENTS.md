@@ -25,7 +25,7 @@ local-docs-index
 ### Running the MCP Server
 ```bash
 # Start the MCP server for AI assistant integration
-uv run python -m src.mcp.server
+uv run python -m src.mcp_server.server
 
 # Alternative using the project script
 local-docs-mcp
