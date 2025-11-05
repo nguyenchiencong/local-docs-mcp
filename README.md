@@ -1,4 +1,4 @@
-# Local Docs MCP - Semantic Search System
+# Local Docs MCP
 
 A modular semantic search system with MCP (Model Context Protocol) integration for indexing and searching local documentation.
 

@@ -4,15 +4,6 @@ This is a modular semantic search system with MCP (Model Context Protocol) integ
 
 ## Key Commands
 
-### Development Setup
-```bash
-# Install dependencies and set up the project
-uv run python scripts/setup.py
-
-# Copy environment configuration and customize
-copy config/default.env.example .env
-```
-
 ### Indexing Documents
 ```bash
 # Index documents from the docs/ directory
@@ -33,20 +24,8 @@ local-docs-mcp
 
 ### Testing
 ```bash
-# Run the test suite
-uv run python scripts/run_tests.py
-
 # Run tests with pytest directly (if available)
-pytest tests/
-```
-
-### External Services (Required Dependencies)
-```bash
-# Start Qdrant vector database
-docker run -d -p 6334:6334 -p 6333:6333 qdrant/qdrant
-
-# Pull Ollama embedding model
-ollama pull hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16
+uv run pytest tests/
 ```
 
 ## Architecture Overview
@@ -65,18 +44,9 @@ ollama pull hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16
    - `server.py`: MCP server implementation exposing search tools
    - `tools.py`: MCP tool definitions and handlers
 
-### Data Flow
-
-```
-Documents → CocoIndex → Text Chunking → Ollama Embeddings → Qdrant Storage
-                                                            ↓
-AI Assistant ← MCP Server ← Semantic Search Service ← Qdrant Query
-```
-
 ### Configuration
 
-- **Environment Variables**: Set in `.env` file (copy from `config/default.env.example`)
-- **MCP Configuration**: `config/mcp_config.json` contains server configuration
+- **Environment Variables**: Set in `.env` file (copy from `.env.example`)
 - **Project Settings**: `pyproject.toml` contains dependencies and build configuration
 
 ### Key Dependencies
@@ -124,20 +94,6 @@ The project requires these services to be running:
 1. Qdrant vector database (default: http://localhost:6334)
 2. Ollama with embedding model loaded
 3. Environment variables configured in `.env` file
-
-## Common Development Tasks
-
-### Adding New Search Strategies
-Add methods to `src/search/service.py` in the `SemanticSearchService` class.
-
-### Adding New MCP Tools
-Define tools in `src/mcp/tools.py` and implement handlers in the `handle_tool_call` function.
-
-### Modifying Document Processing
-Update the `text_embedding_flow` function in `src/indexing/main_flow.py`.
-
-### Testing Search Functionality
-Use the interactive mode in `src/indexing/main_flow.py` or test through the MCP server.
 
 ## Rules
 - ALWAYS use uv for all python commands
