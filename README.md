@@ -8,7 +8,7 @@ A modular semantic search system with MCP (Model Context Protocol) integration f
 
 1. **Clone and setup the project:**
 ```bash
-git clone <repository-url>
+git clone git@github.com:nguyenchiencong/local-docs-mcp.git
 cd local-docs-mcp
 ```
 
