@@ -51,6 +51,8 @@ Before indexing, add your documents to the docs folder.
 **To index your documents:**
 ```bash
 uv run python -m src.indexing.main_flow
+# To run the force reindex utility
+uv run python -m src.indexing.force_reindex
 ```
 
 **To start the MCP server:**
@@ -115,6 +117,28 @@ The MCP server exposes the following semantic search tools to AI assistants:
 | `document_retrieval` | Retrieve complete document by ID. Use this when you need the full context of a specific document found in search results. | `document_id` (required string) | "Get the full document for ID 'doc_12345'" |
 | `search_with_metadata_filter` | Search with metadata constraints. Use this to narrow down search results by specific document properties. | `query` (required string), `metadata_filter` (optional object), `limit` (optional number, default: 10), `min_similarity_score` (optional number, default: 0.0) | "Search for API documentation in files with filename containing 'api'" |
 | `get_collection_info` | Get information about the indexed document collection, including statistics and status. | _none_ | "Show me collection statistics and indexing status" |
+
+### Use cases
+
+**Documentation Research:**
+- "What are signals and how do they work in Godot?"
+- "Find tutorials about character controllers"
+- "Explain the difference between KinematicBody and RigidBody"
+
+**Problem Solving:**
+- "How do I fix 'node not found' errors?"
+- "What are the best practices for performance optimization?"
+- "Search for debugging techniques in Godot"
+
+**Learning Paths:**
+- "I'm a beginner, show me getting started content"
+- "What should I learn after basic GDScript?"
+- "Find intermediate tutorials about physics"
+
+**Specific Searches:**
+- "Show me the top 5 most relevant results about animations"
+- "Find only tutorial files about UI design"
+- "Look for performance optimization guides"
 
 ## Development
 

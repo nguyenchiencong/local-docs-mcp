@@ -98,4 +98,5 @@ The project requires these services to be running:
 ## Rules
 - ALWAYS use uv for all python commands
 - NEVER run linux bash commands, you must ALWAYS use powershell for commands on windows
+- REMEMBER that you should use commands working for powershell only
 - NEVER use emoji

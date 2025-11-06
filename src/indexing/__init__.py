@@ -7,7 +7,5 @@ This module handles the indexing flow including:
 - Vector database storage
 """
 
-from .main_flow import text_embedding_flow_impl, text_to_embedding
-from .chunking import chunk_with_chonkie
-
-__all__ = ["text_embedding_flow_impl", "text_to_embedding", "chunk_with_chonkie"]
+# Keep the module minimal to avoid circular imports
+__all__ = []
