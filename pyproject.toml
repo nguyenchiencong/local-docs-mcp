@@ -12,6 +12,7 @@ dependencies = [
     "tiktoken>=0.5.0",
     "mcp>=1.0.0",
     "pytest>=8.4.2",
+    "toml>=0.10.2",
 ]
 
 [project.scripts]
@@ -62,3 +63,21 @@ profile = "black"
 multi_line_output = 3
 line_length = 88
 known_first_party = ["src"]
+
+[tool.local-docs]
+# Qdrant configuration
+qdrant_url = "http://localhost:6334"
+qdrant_collection = "local-docs-collection"
+
+# Ollama configuration
+ollama_url = "http://localhost:11434"
+ollama_model = "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
+embedding_dimension = 1024
+
+# Document configuration
+docs_directory = "docs"
+cocoignore_file = ".cocoignore"
+supported_extensions = [".md", ".rst", ".txt"]
+
+# Search configuration
+search_limit = 10

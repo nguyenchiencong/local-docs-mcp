@@ -23,12 +23,14 @@ class SearchResult:
     end_index: Optional[int] = None
 
 
-@dataclass
 class SearchConfig:
-    """Configuration for semantic search service"""
-    qdrant_url: str = "http://localhost:6334"
-    qdrant_collection: str = "local-docs-collection"
-    embedding_model: str = "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
-    embedding_url: str = "http://localhost:11434"
-    default_limit: int = 10
-    default_similarity_threshold: float = 0.0
+    """Configuration for semantic search service using centralized config"""
+
+    def __init__(self, config_dict: Dict[str, Any]):
+        """Initialize from centralized configuration dictionary"""
+        self.qdrant_url = config_dict["qdrant_url"]
+        self.qdrant_collection = config_dict["qdrant_collection"]
+        self.embedding_model = config_dict["ollama_model"]
+        self.embedding_url = config_dict["ollama_url"]
+        self.default_limit = config_dict["search_limit"]
+        self.default_similarity_threshold = 0.0

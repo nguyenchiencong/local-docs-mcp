@@ -10,7 +10,6 @@ import os
 import fnmatch
 from pathlib import Path
 from typing import List, Union, Optional
-from dataclasses import dataclass
 
 import cocoindex
 import ollama
@@ -20,20 +19,7 @@ from qdrant_client.models import Distance, VectorParams
 from ollama import ResponseError, RequestError
 
 from .chunking import chunk_with_chonkie
-
-
-@dataclass
-class IndexingConfig:
-    """Configuration settings for the indexing system."""
-    qdrant_url: str = "http://localhost:6334"
-    qdrant_collection: str = "local-docs-collection"
-    ollama_url: str = "http://localhost:11434"
-    ollama_model: str = "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
-    docs_directory: str = "docs"
-    cocoignore_file: str = ".cocoignore"
-    supported_extensions: set = frozenset({'.md', '.rst', '.txt'})
-    embedding_dimension: int = 1024
-    search_limit: int = 10
+from ..config import config
 
 
 class IndexingError(Exception):
@@ -51,14 +37,13 @@ class QdrantConnectionError(IndexingError):
     pass
 
 
-# Global configuration instance
-config = IndexingConfig()
+# Configuration is now imported from config module
 
 # Configure ollama client
-ollama_client = ollama.Client(host=config.ollama_url)
+ollama_client = ollama.Client(host=config["ollama_url"])
 
 
-def load_cocoignore_patterns(file_path: str = config.cocoignore_file) -> List[str]:
+def load_cocoignore_patterns(file_path: str = config["cocoignore_file"]) -> List[str]:
     """Load patterns from .cocoignore file"""
     patterns = []
     try:
@@ -78,32 +63,32 @@ def generate_embedding(text: Union[str, List[str]]) -> Union[List[float], List[L
     """Generate embedding using Ollama model with error handling."""
     try:
         response = ollama_client.embed(
-            model=config.ollama_model,
+            model=config["ollama_model"],
             input=text
         )
         return response.embeddings if len(response.embeddings) > 1 else response.embeddings[0]
     except ResponseError as e:
         raise OllamaConnectionError(f"Ollama model error: {e.error}")
     except RequestError as e:
-        raise OllamaConnectionError(f"Failed to connect to Ollama: {e}. Make sure Ollama is running at: {config.ollama_url}")
+        raise OllamaConnectionError(f"Failed to connect to Ollama: {e}. Make sure Ollama is running at: {config['ollama_url']}")
 
 
-def ensure_qdrant_collection(client: QdrantClient, collection_name: str = config.qdrant_collection) -> None:
+def ensure_qdrant_collection(client: QdrantClient, collection_name: str = config["qdrant_collection"]) -> None:
     """Ensure Qdrant collection exists with correct dimensions."""
     try:
         collection_info = client.get_collection(collection_name)
-        if collection_info.config.params.vectors.size != config.embedding_dimension:
+        if collection_info.config.params.vectors.size != config["embedding_dimension"]:
             print(f"Recreating collection with correct dimensions...")
             client.delete_collection(collection_name)
             client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(size=config.embedding_dimension, distance=Distance.COSINE)
+                vectors_config=VectorParams(size=config["embedding_dimension"], distance=Distance.COSINE)
             )
             print(f"Created collection: {collection_name}")
     except Exception:
         client.create_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(size=config.embedding_dimension, distance=Distance.COSINE)
+            vectors_config=VectorParams(size=config["embedding_dimension"], distance=Distance.COSINE)
         )
         print(f"Created collection: {collection_name}")
 
@@ -155,9 +140,9 @@ def text_to_embedding(
     return text.transform(
         cocoindex.functions.EmbedText(
             api_type=cocoindex.LlmApiType.OLLAMA,
-            model=config.ollama_model,
-            address=config.ollama_url,
-            output_dimension=config.embedding_dimension,
+            model=config["ollama_model"],
+            address=config["ollama_url"],
+            output_dimension=config["embedding_dimension"],
         )
     )
 
@@ -172,12 +157,12 @@ def text_embedding_flow_impl(
     ignore_patterns = load_cocoignore_patterns()
 
     # Convert supported extensions to included patterns
-    included_patterns = [f"*{ext}" for ext in config.supported_extensions]
+    included_patterns = [f"*{ext}" for ext in config["supported_extensions"]]
 
     # Add local file source with built-in filtering
     data_scope["documents"] = flow_builder.add_source(
         cocoindex.sources.LocalFile(
-            path=config.docs_directory,
+            path=config["docs_directory"],
             included_patterns=included_patterns,
             excluded_patterns=ignore_patterns if ignore_patterns else None
         )
@@ -205,7 +190,7 @@ def text_embedding_flow_impl(
     doc_embeddings.export(
         "doc_embeddings",
         cocoindex.targets.Qdrant(
-            collection_name=config.qdrant_collection
+            collection_name=config["qdrant_collection"]
         ),
         primary_key_fields=["id"],
         vector_indexes=[
@@ -219,10 +204,10 @@ def text_embedding_flow_impl(
 
 @functools.cache
 def get_qdrant_client() -> QdrantClient:
-    return QdrantClient(url=config.qdrant_url, prefer_grpc=True)
+    return QdrantClient(url=config["qdrant_url"], prefer_grpc=True)
 
 
-def validate_docs_directory(docs_path: str = config.docs_directory) -> Optional[Path]:
+def validate_docs_directory(docs_path: str = config["docs_directory"]) -> Optional[Path]:
     """Validate and return the docs directory path."""
     if not os.path.exists(docs_path):
         print(f"Error: '{docs_path}' directory not found!")
@@ -301,9 +286,9 @@ def _main() -> None:
                 raise
 
             search_results = client.search(
-                collection_name=config.qdrant_collection,
+                collection_name=config["qdrant_collection"],
                 query_vector=("text_embedding", query_embedding),
-                limit=config.search_limit,
+                limit=config["search_limit"],
             )
             return cocoindex.QueryOutput(
                 results=[
@@ -336,7 +321,7 @@ def _main() -> None:
         print("\nTroubleshooting tips:")
         print("   1. Make sure Qdrant is running: docker run -d -p 6334:6334 -p 6333:6333 qdrant/qdrant")
         print(f"   2. Make sure Ollama is running with the embedding model:")
-        print(f"      ollama pull {config.ollama_model}")
+        print(f"      ollama pull {config['ollama_model']}")
         print("   3. Check your .env configuration")
         print("   4. Ensure your .cocoignore patterns are valid")
         return

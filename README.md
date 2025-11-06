@@ -1,6 +1,15 @@
 # Local Docs MCP
 
-A modular semantic search system with MCP (Model Context Protocol) integration for indexing and searching local documentation.
+A modular semantic search system with MCP (Model Context Protocol) integration for searching local documentation. The Retrieval-Augmented Generation (RAG) system not only lets you manage document chunks for knowledge retrieval but also gives AI assistants semantic search capabilities through the MCP.
+
+## Key Features
+
+| **Core Capability**     | **Technical Implementation**                                                                                                                                                                                                                   |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Document Indexing**   | A full indexing pipeline that processes documents from the `docs/` directory, chunks them, and creates embeddings using **Ollama**. With **Cocoindex**, it updates only the parts that have changed — when users edit or add new content, the system detects those changes and updates selectively. |
+| **Vector Database**     | Uses **Qdrant** to store document embeddings for semantic search.                                                                                                                                                                              |
+| **Retrieval**           | The search service provides semantic search capabilities with multiple strategies (**semantic**, **hybrid**, and **filtered**).                                                                                                                |
+| **MCP Integration**     | The **MCP server** exposes these retrieval capabilities to AI assistants.                                                                                                                                                                     |
 
 ## Quick Start
 
@@ -30,17 +39,55 @@ cp .env.example .env
 # Edit .env with your specific configuration
 ```
 
-4. **Index your documents:**
+4. **Install dependencies:**
+```bash
+uv sync
+```
+
+### Usage
+
+Before indexing, add your documents to the docs folder.
+
+**To index your documents:**
 ```bash
 uv run python -m src.indexing.main_flow
 ```
 
-5. **Start the MCP server:**
+**To start the MCP server:**
 ```bash
 uv run python -m src.mcp_server.server
 ```
 
 ## Configuration
+
+### System Settings
+
+All configuration is managed in [`pyproject.toml`](pyproject.toml#L66) under the `[tool.local-docs]` section:
+
+```toml
+[tool.local-docs]
+# Qdrant configuration
+qdrant_url = "http://localhost:6334"
+qdrant_collection = "local-docs-collection"
+
+# Ollama configuration
+ollama_url = "http://localhost:11434"
+ollama_model = "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
+embedding_dimension = 1024
+
+# Document configuration
+docs_directory = "docs"
+supported_extensions = [".md", ".rst", ".txt"]
+
+# Search configuration
+search_limit = 10
+```
+
+**Environment Variables**: Override any setting with `LOCAL_DOCS_*` environment variables:
+```bash
+export LOCAL_DOCS_SEARCH_LIMIT=20
+export LOCAL_DOCS_OLLAMA_MODEL="different-model"
+```
 
 ### MCP Client Setup
 
