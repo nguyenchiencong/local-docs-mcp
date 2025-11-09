@@ -173,7 +173,9 @@ def text_embedding_flow_impl(
     with data_scope["documents"].row() as doc:
         doc["chunks"] = doc["content"].transform(
             cocoindex.functions.SplitRecursively(),
-            language="markdown", chunk_size=2000, chunk_overlap=500
+            language="markdown",
+            chunk_size=config["chunk_size"],
+            chunk_overlap=config["chunk_overlap"],
         )
 
         with doc["chunks"].row() as chunk:

@@ -28,7 +28,7 @@ class TestSearchConfig:
         assert config.qdrant_collection == "local-docs-collection"
         assert config.embedding_model == "hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:F16"
         assert config.default_limit == 10
-        assert config.default_similarity_threshold == 0.0
+        assert config.default_similarity_threshold == 0.15
 
     def test_custom_config(self):
         """Test custom configuration values"""

@@ -83,6 +83,17 @@ supported_extensions = [".md", ".rst", ".txt"]
 
 # Search configuration
 search_limit = 10
+
+# Chunking configuration
+chunk_size = 1200
+chunk_overlap = 200
+
+# Search configuration
+search_limit = 10
+similarity_threshold = 0.15
+search_hnsw_ef = 256
+hybrid_semantic_weight = 0.85
+mmr_lambda = 0.75
 ```
 
 **Environment Variables**: Override any setting with `LOCAL_DOCS_*` environment variables:

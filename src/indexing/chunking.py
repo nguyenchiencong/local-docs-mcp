@@ -9,6 +9,8 @@ from typing import List, Dict
 from chonkie import TokenChunker
 import tiktoken
 
+from ..config import config
+
 
 def chunk_with_chonkie(text: str) -> List[Dict]:
     """
@@ -30,8 +32,8 @@ def chunk_with_chonkie(text: str) -> List[Dict]:
 
     chunker = TokenChunker(
         tokenizer=tokenizer,
-        chunk_size=2000,
-        chunk_overlap=500
+        chunk_size=config["chunk_size"],
+        chunk_overlap=config["chunk_overlap"]
     )
     chunks = chunker.chunk(text)
 

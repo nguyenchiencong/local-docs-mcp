@@ -19,6 +19,12 @@ def load_config():
         "supported_extensions": [".md", ".rst", ".txt"],
         "embedding_dimension": 1024,
         "search_limit": 10,
+        "similarity_threshold": 0.15,
+        "search_hnsw_ef": 256,
+        "chunk_size": 1200,
+        "chunk_overlap": 200,
+        "hybrid_semantic_weight": 0.85,
+        "mmr_lambda": 0.75,
     }
 
     # Load from pyproject.toml if it exists
@@ -45,13 +51,27 @@ def load_config():
         "LOCAL_DOCS_DOCS_DIRECTORY": "docs_directory",
         "LOCAL_DOCS_EMBEDDING_DIMENSION": "embedding_dimension",
         "LOCAL_DOCS_SEARCH_LIMIT": "search_limit",
+        "LOCAL_DOCS_SIMILARITY_THRESHOLD": "similarity_threshold",
+        "LOCAL_DOCS_SEARCH_HNSW_EF": "search_hnsw_ef",
+        "LOCAL_DOCS_CHUNK_SIZE": "chunk_size",
+        "LOCAL_DOCS_CHUNK_OVERLAP": "chunk_overlap",
+        "LOCAL_DOCS_HYBRID_WEIGHT": "hybrid_semantic_weight",
+        "LOCAL_DOCS_MMR_LAMBDA": "mmr_lambda",
     }
 
     for env_var, config_key in env_mappings.items():
         if env_var in os.environ:
             value = os.environ[env_var]
-            if config_key in ["embedding_dimension", "search_limit"]:
+            if config_key in [
+                "embedding_dimension",
+                "search_limit",
+                "chunk_size",
+                "chunk_overlap",
+                "search_hnsw_ef",
+            ]:
                 value = int(value)
+            elif config_key in ["similarity_threshold", "hybrid_semantic_weight", "mmr_lambda"]:
+                value = float(value)
             config[config_key] = value
 
     # Convert supported_extensions to frozenset

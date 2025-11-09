@@ -6,9 +6,10 @@ It connects to Qdrant and Ollama for search operations only.
 """
 
 import functools
+import math
 from typing import List, Dict, Any, Optional
 from qdrant_client import QdrantClient
-from qdrant_client.models import Filter, FieldCondition, MatchValue
+from qdrant_client.models import Filter, FieldCondition, MatchValue, SearchParams
 import ollama
 
 from .models import SearchResult, SearchConfig
@@ -32,11 +33,24 @@ class SemanticSearchService:
             self._client = QdrantClient(url=self.config.qdrant_url, prefer_grpc=True)
         return self._client
 
+    def _get_search_params(self) -> SearchParams:
+        """Build reusable Qdrant search params"""
+        return SearchParams(hnsw_ef=self.config.search_hnsw_ef)
+
     def _embed_query(self, query: str) -> List[float]:
         """Embed a single query with caching for efficiency"""
+        if query is None:
+            query = ""
+
+        normalized_query = query.strip()
+
+        if not normalized_query:
+            # Return a stable zero vector for empty queries to avoid downstream errors
+            return [0.0] * self.config.embedding_dimension
+
         # Check cache first
-        if query in self._embedding_cache:
-            return self._embedding_cache[query]
+        if normalized_query in self._embedding_cache:
+            return self._embedding_cache[normalized_query]
 
         # Use direct HTTP request to Ollama for better performance
         try:
@@ -46,7 +60,7 @@ class SemanticSearchService:
                 f"{self.config.embedding_url}/api/embeddings",
                 json={
                     "model": self.config.embedding_model,
-                    "prompt": query
+                    "prompt": normalized_query
                 },
                 timeout=5  # Short timeout for search responsiveness
             )
@@ -55,7 +69,7 @@ class SemanticSearchService:
 
             # Cache the result (limit cache size to prevent memory issues)
             if len(self._embedding_cache) < 100:
-                self._embedding_cache[query] = embedding
+                self._embedding_cache[normalized_query] = embedding
 
             return embedding
         except Exception as e:
@@ -63,7 +77,7 @@ class SemanticSearchService:
             print(f"Warning: Direct embedding request failed, using ollama library: {e}")
             response = ollama.embed(
                 model=self.config.embedding_model,
-                input=query
+                input=normalized_query
             )
             return response.embeddings[0]
 
@@ -114,7 +128,8 @@ class SemanticSearchService:
             query=query_embedding,
             using="text_embedding",
             limit=limit * 2,  # Get more results initially for filtering
-            score_threshold=min_score
+            score_threshold=min_score,
+            search_params=self._get_search_params(),
         ).points
 
         # Convert and filter results
@@ -129,7 +144,7 @@ class SemanticSearchService:
     def hybrid_search(
         self,
         query: str,
-        semantic_weight: float = 0.7,
+        semantic_weight: Optional[float] = None,
         limit: Optional[int] = None,
         min_similarity_score: Optional[float] = None,
         keyword_boost_factor: float = 1.5
@@ -149,6 +164,11 @@ class SemanticSearchService:
         """
         limit = limit or self.config.default_limit
         min_score = min_similarity_score or self.config.default_similarity_threshold
+        semantic_weight = (
+            semantic_weight
+            if semantic_weight is not None
+            else self.config.hybrid_semantic_weight
+        )
 
         # Stage 1: Semantic search
         semantic_results = self.semantic_search(
@@ -162,7 +182,9 @@ class SemanticSearchService:
 
         # Stage 2: Keyword matching on semantic results
         query_terms = self._extract_search_terms(query)
-        keyword_scores = self._calculate_keyword_scores(semantic_results, query_terms)
+        keyword_scores = self._calculate_keyword_scores(
+            semantic_results, query_terms, query.lower()
+        )
 
         # Stage 3: Score fusion
         final_results = []
@@ -198,7 +220,7 @@ class SemanticSearchService:
 
         # Sort by final score and return top results
         final_results.sort(key=lambda x: x.score, reverse=True)
-        return final_results[:limit]
+        return self._rerank_with_mmr(final_results, limit)
 
     def document_retrieval(self, document_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -293,10 +315,86 @@ class SemanticSearchService:
             using="text_embedding",
             query_filter=search_filter,
             limit=limit,
-            score_threshold=min_score
+            score_threshold=min_score,
+            search_params=self._get_search_params(),
         ).points
 
         return self._convert_to_search_results(search_results)
+
+    def _cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
+        """Compute cosine similarity between two vectors"""
+        if not vec_a or not vec_b:
+            return 0.0
+
+        length = min(len(vec_a), len(vec_b))
+        if length == 0:
+            return 0.0
+
+        dot_product = 0.0
+        norm_a = 0.0
+        norm_b = 0.0
+        for i in range(length):
+            a = vec_a[i]
+            b = vec_b[i]
+            dot_product += a * b
+            norm_a += a * a
+            norm_b += b * b
+
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+
+        return dot_product / (math.sqrt(norm_a) * math.sqrt(norm_b))
+
+    def _rerank_with_mmr(
+        self,
+        results: List[SearchResult],
+        limit: int,
+        lambda_param: Optional[float] = None
+    ) -> List[SearchResult]:
+        """
+        Apply a lightweight MMR re-ranking step to promote diversity in results.
+        """
+        if lambda_param is None:
+            lambda_param = self.config.mmr_lambda
+
+        if len(results) <= 1:
+            return results[:limit]
+
+        selected: List[SearchResult] = []
+        candidates = list(results)
+
+        while candidates and len(selected) < limit:
+            best_candidate = None
+            best_score = float("-inf")
+
+            for candidate in candidates:
+                diversity_penalty = 0.0
+                if selected and candidate.embedding:
+                    similarities = [
+                        self._cosine_similarity(candidate.embedding, chosen.embedding)
+                        for chosen in selected
+                        if chosen.embedding
+                    ]
+                    if similarities:
+                        diversity_penalty = max(similarities)
+
+                mmr_score = lambda_param * candidate.score - (1 - lambda_param) * diversity_penalty
+
+                if mmr_score > best_score:
+                    best_score = mmr_score
+                    best_candidate = candidate
+
+            if best_candidate is None:
+                break
+
+            selected.append(best_candidate)
+            candidates.remove(best_candidate)
+
+        if len(selected) < limit:
+            # If we ran out of candidates due to missing embeddings, fall back to remaining order
+            selected.extend(candidates[: limit - len(selected)])
+
+        return selected[:limit]
 
     def _extract_search_terms(self, query: str) -> List[str]:
         """
@@ -333,13 +431,19 @@ class SemanticSearchService:
 
         return filtered_terms
 
-    def _calculate_keyword_scores(self, results: List[SearchResult], query_terms: List[str]) -> Dict[str, float]:
+    def _calculate_keyword_scores(
+        self,
+        results: List[SearchResult],
+        query_terms: List[str],
+        raw_query: Optional[str] = None
+    ) -> Dict[str, float]:
         """
         Calculate keyword matching scores for each result.
 
         Args:
             results: List of search results to score
             query_terms: List of extracted search terms
+            raw_query: Original search query (lowercased)
 
         Returns:
             Dictionary mapping result IDs to keyword scores
@@ -349,8 +453,11 @@ class SemanticSearchService:
         if not query_terms:
             return scores
 
+        normalized_query = (raw_query or "").strip().lower()
+
         for result in results:
             text_lower = result.text.lower()
+            filename_lower = (result.filename or "").lower()
             score = 0.0
             term_count = len(query_terms)
 
@@ -367,8 +474,15 @@ class SemanticSearchService:
                     occurrence_bonus = min(term_occurrences / 10, 0.3)
                     score += occurrence_bonus
 
-                    # Bonus for exact phrase matches (if the term appears as part of the original query)
-                    # This handles cases where users search for multi-word phrases
+            # Boost when the entire query phrase shows up in the chunk
+            if normalized_query and normalized_query in text_lower:
+                score += 0.3
+
+            # Modest boost for filename matches
+            if filename_lower:
+                filename_hits = sum(1 for term in query_terms if term in filename_lower)
+                if filename_hits:
+                    score += min(filename_hits / term_count, 0.2)
 
             # Base score from term coverage (what percentage of query terms were found)
             base_score = matches / term_count
