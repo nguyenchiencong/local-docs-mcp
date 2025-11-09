@@ -46,6 +46,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Cocoindex
+.cocoignore
+
+# AI stuff
 CLAUDE.md
 .claude/
 .mcp.json

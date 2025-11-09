@@ -35,8 +35,11 @@ docker compose -f <(curl -L https://raw.githubusercontent.com/cocoindex-io/cocoi
 
 3. **Configure environment:**
 ```bash
-cp .env.example .env
 # Edit .env with your specific configuration
+cp .env.example .env
+
+# Don't forget to setup your .cocoignore file
+cp .cocoignore.example .cocoignore
 ```
 
 4. **Install dependencies:**

@@ -3,10 +3,16 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 def load_config():
     """Load configuration from pyproject.toml with simple fallbacks."""
-    config_path = Path(__file__).parent.parent / "pyproject.toml"
+    project_root = Path(__file__).parent.parent
+    config_path = project_root / "pyproject.toml"
+
+    # Load environment variables from .env if present
+    load_dotenv(project_root / ".env", override=False)
 
     # Default configuration
     config = {
@@ -77,6 +83,22 @@ def load_config():
     # Convert supported_extensions to frozenset
     if isinstance(config["supported_extensions"], list):
         config["supported_extensions"] = frozenset(config["supported_extensions"])
+
+    # Ensure docs_directory is absolute so cocoindex worker resolves it correctly
+    docs_dir = Path(config["docs_directory"])
+    if not docs_dir.is_absolute():
+        docs_dir = (project_root / docs_dir).resolve()
+    else:
+        docs_dir = docs_dir.resolve()
+    config["docs_directory"] = docs_dir.as_posix()
+
+    # Normalize cocoignore path relative to project root if needed
+    cocoignore_path = Path(config["cocoignore_file"])
+    if not cocoignore_path.is_absolute():
+        cocoignore_path = (project_root / cocoignore_path).resolve()
+    else:
+        cocoignore_path = cocoignore_path.resolve()
+    config["cocoignore_file"] = cocoignore_path.as_posix()
 
     return config
 

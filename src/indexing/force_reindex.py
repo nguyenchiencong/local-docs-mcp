@@ -23,12 +23,12 @@ def force_reindex():
         # Initialize CocoIndex
         cocoindex.init()
 
-        # Clear all existing CocoIndex state to force reprocessing
-        print("Clearing existing CocoIndex state...")
-        cocoindex.drop_all_flows()
-
         # Open the flow
         text_embedding_flow = cocoindex.open_flow("TextEmbeddingWithQdrantMain", text_embedding_flow_impl)
+
+        # Clear all existing CocoIndex state to force reprocessing
+        print("Clearing existing CocoIndex state...")
+        text_embedding_flow.drop(report_to_stdout=True)
 
         # Add search handler (from main_flow.py)
         @text_embedding_flow.query_handler(

@@ -157,7 +157,8 @@ def text_embedding_flow_impl(
     ignore_patterns = load_cocoignore_patterns()
 
     # Convert supported extensions to included patterns
-    included_patterns = [f"*{ext}" for ext in config["supported_extensions"]]
+    # Use globset syntax: ** is required to match nested directories.
+    included_patterns = [f"**/*{ext}" for ext in config["supported_extensions"]]
 
     # Add local file source with built-in filtering
     data_scope["documents"] = flow_builder.add_source(
