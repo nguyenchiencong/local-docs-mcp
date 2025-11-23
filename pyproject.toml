@@ -17,7 +17,7 @@ dependencies = [
 
 [project.scripts]
 local-docs-index = "src.indexing.main_flow:_main"
-local-docs-mcp = "src.mcp_server.server:main"
+local-docs-mcp = "src.cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

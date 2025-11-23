@@ -19,9 +19,7 @@ from mcp.types import (
     CallToolResult
 )
 
-from ..search.service import SemanticSearchService
-from ..search.models import SearchConfig
-from ..config import config
+from ..bootstrap import build_search_service
 from .tools import get_available_tools, handle_tool_call
 
 # Configure logging
@@ -32,8 +30,7 @@ logger = logging.getLogger(__name__)
 server = Server("local-docs-mcp")
 
 # Initialize semantic search service with centralized config
-search_config = SearchConfig(config)
-search_service = SemanticSearchService(search_config)
+search_service = build_search_service()
 
 
 @server.list_tools()

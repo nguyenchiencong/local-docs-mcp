@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2025-11-10
+
+- Added a unified CLI entrypoint so MCP tools can be run directly as subcommands (`local-docs-mcp semantic_search ...`), keeping `server` as the default when no args are provided.
+- Introduced shared bootstrap helpers for consistent search service initialization across CLI and MCP server.
+- Updated README with PATH setup guidance (Windows/Linux/macOS) and refreshed examples to match the simplified CLI shape.
+- Added CLI-focused tests to ensure pretty and JSON output work for tool invocations.
+
 ## 2025-11-09
 
 - Load `.env` automatically during config bootstrap and normalize both the docs directory and `.cocoignore` paths so CocoIndex workers always see the right files.

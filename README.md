@@ -63,6 +63,41 @@ uv run python -m src.indexing.force_reindex
 uv run python -m src.mcp_server.server
 ```
 
+### Make the CLI available on your PATH
+
+If you want to run `local-docs-mcp` from any directory:
+
+- **Windows (PowerShell):**
+  ```powershell
+  setx PATH "path\to\local-docs-mcp\.venv\Scripts;$($env:Path)"
+  ```
+
+- **Linux/macOS (bash/zsh):**
+  ```bash
+  echo 'export PATH="/path/to/local-docs-mcp/.venv/bin:$PATH"' >> ~/.bashrc
+  ```
+
+**To run MCP tools directly from the CLI (one-off calls):**
+```bash
+# Start the server (default behavior)
+local-docs-mcp
+
+# Run a semantic search once and exit
+local-docs-mcp semantic_search --query "vector search overview" --limit 5
+
+# Run hybrid search
+local-docs-mcp hybrid_search --query "async await" --semantic-weight 0.7 --limit 5
+
+# Run a filtered search with metadata (JSON object)
+local-docs-mcp search_with_metadata_filter --query "UI tutorial" --metadata-filter '{"filename": "ui.md"}' --limit 5
+
+# Retrieve a specific document by ID
+local-docs-mcp document_retrieval --document-id "doc-123"
+
+# Fetch collection info
+local-docs-mcp get_collection_info --json
+```
+
 ## Configuration
 
 ### System Settings
